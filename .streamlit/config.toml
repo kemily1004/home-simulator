@@ -69,3 +69,6 @@ secondaryBackgroundColor = "#eef0eb"
 [theme.dark.sidebar]
 backgroundColor = "#171915"
 secondaryBackgroundColor = "#262923"
+
+[client]
+toolbarMode = "minimal"   # 오른쪽 위 Deploy 버튼 등 개발자 메뉴 숨김

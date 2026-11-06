@@ -5,6 +5,7 @@
 """
 
 import hmac
+from html import escape
 import json
 from datetime import date
 
@@ -26,7 +27,8 @@ from storage import (
     save_admin_records, save_dream_to_browser, save_to_browser,
 )
 
-st.set_page_config(page_title="내집마련 시뮬레이터", page_icon=":material/home:", layout="wide")
+st.set_page_config(page_title="내집마련 시뮬레이터", page_icon=":material/home:", layout="wide",
+                   initial_sidebar_state="collapsed")
 
 ASSET_LABELS = {
     "cash": "현금·예금", "invest": "투자(주식 등)", "safe": "안전자산(채권·발행어음 등)",
@@ -59,47 +61,112 @@ CHART_FONT = 'system-ui, -apple-system, "Segoe UI", "Malgun Gothic", "Apple SD G
 # - tile: 카드 안 metric 칸의 옅은 바탕
 # - headline_*: 결과 요약 결론 카드 (지금 가능 = 검정 바탕 라임 글자, Wise 대표 카드)
 PAGE_COLORS = {
-    "light": {"card": "#ffffff", "tile": "#f3f5f1", "line": "#e1e5dd",
-              "now_bg": "#0e0f0c", "now_title": "#9fe870", "now_text": "#e8ebe6",
-              "later_bg": "#e2f6d5", "later_text": "#163300",
-              "warn_bg": "#fff3c4", "warn_text": "#4a3b1c"},
-    "dark": {"card": "#171915", "tile": "#20231e", "line": "#2c3029",
-             "now_bg": "#9fe870", "now_title": "#0e0f0c", "now_text": "#163300",
-             "later_bg": "#1a2b12", "later_text": "#c5edab",
-             "warn_bg": "#2e2608", "warn_text": "#ffd11a"},
+    "light": {"card": "#ffffff", "tile": "#f3f5f1", "line": "#e1e5dd", "text": "#0e0f0c", "muted": "#5f625d",
+              "step": "#2f7d1c", "tab_on_bg": "#0e0f0c", "tab_on_text": "#9fe870",
+              "own": "#163300", "loan": "#9fe870", "gap": "#ffd11a", "gap2": "#ffeb99",
+              "now_bg": "#0e0f0c", "now_big": "#9fe870", "now_text": "#e8ebe6",
+              "later_bg": "#e2f6d5", "later_big": "#163300", "later_text": "#163300",
+              "warn_bg": "#fff3c4", "warn_big": "#4a3b1c", "warn_text": "#4a3b1c"},
+    "dark": {"card": "#171915", "tile": "#20231e", "line": "#2c3029", "text": "#e8ebe6", "muted": "#a3a6a0",
+             "step": "#9fe870", "tab_on_bg": "#9fe870", "tab_on_text": "#0e0f0c",
+             "own": "#38c8ff", "loan": "#9fe870", "gap": "#ffd11a", "gap2": "#8a7310",
+             "now_bg": "#9fe870", "now_big": "#0e0f0c", "now_text": "#163300",
+             "later_bg": "#1a2b12", "later_big": "#cdffad", "later_text": "#c5edab",
+             "warn_bg": "#2e2608", "warn_big": "#ffd11a", "warn_text": "#f3e3a6"},
 }
 PAGE_CSS = """
 <style>
-/* 라임 그린 위에는 흰 글자가 안 보이므로 검정 글자로 (버튼·선택된 탭·슬라이더 값) */
+/* 본문 폭: 너무 넓으면 입력칸이 길어져 어색하므로 1120px까지 */
+[data-testid="stMainBlockContainer"] { max-width: 1120px; padding-top: 3rem; }
+/* 라임 버튼 위 글자는 검정, 슬라이더 값 글자는 본문색 */
 [data-testid="stBaseButton-primary"], [data-testid="stBaseButton-primary"] * { color: #0e0f0c !important; }
-[data-testid="stTab"][aria-selected="true"] { color: inherit !important; font-weight: 700; }
-[data-testid="stTab"][aria-selected="true"] * { color: inherit !important; }
 [data-testid="stSliderThumbValue"] { color: inherit !important; }
 /* 긴 금액이 metric 칸에서 '...'으로 잘리지 않게 띄어쓰기에서 줄바꿈 (글자 크기는 config.toml) */
 [data-testid="stMetricValue"] * {
   white-space: normal !important; overflow: visible !important; text-overflow: clip !important; word-break: keep-all;
 }
-/* 제목 글자 간격을 조금 좁혀 단단하게 */
 h1 { letter-spacing: -0.03em; }
 h2, h3 { letter-spacing: -0.02em; }
+
+/* 탭: 흰 알약 안에 선택된 탭만 진하게 (Wise 내비게이션) */
+[data-testid="stTabs"] [data-baseweb="tab-list"] {
+  gap: 4px; background: {card}; padding: 6px; border-radius: 999px; width: fit-content; max-width: 100%;
+}
+[data-testid="stTabs"] [data-baseweb="tab-highlight"], [data-testid="stTabs"] [data-baseweb="tab-border"] { display: none; }
+[data-testid="stTab"] { border-radius: 999px; padding: 8px 18px !important; height: auto; }
+[data-testid="stTab"] p { font-size: 15px; font-weight: 600; }
+[data-testid="stTab"][aria-selected="true"] { background: {tab_on_bg}; }
+[data-testid="stTab"][aria-selected="true"], [data-testid="stTab"][aria-selected="true"] * { color: {tab_on_text} !important; }
+
 /* 흰 카드 */
-[class*="st-key-card_"] { background: {card}; border-radius: 24px; padding: 24px; }
+[class*="st-key-card_"] { background: {card}; border-radius: 24px; padding: 28px; }
 /* metric: 테두리 대신 면 색으로 구분 (카드 밖은 흰 칸, 카드 안은 옅은 칸) */
 [data-testid="stMetric"] { background: {card}; border: none !important; border-radius: 16px; padding: 14px 16px; }
 [class*="st-key-card_"] [data-testid="stMetric"] { background: {tile}; }
 [class*="st-key-card_"] [data-testid="stExpander"] details { border-color: {line}; border-radius: 16px; }
-/* 결과 결론 카드 */
-[class*="st-key-headline_"] { border-radius: 24px; padding: 22px 24px; }
-[class*="st-key-headline_"] h3 { padding-top: 0; }
-.st-key-headline_now { background: {now_bg}; }
-.st-key-headline_now h3 { color: {now_title}; }
-.st-key-headline_now p { color: {now_text}; }
-.st-key-headline_later { background: {later_bg}; }
-.st-key-headline_later * { color: {later_text}; }
-.st-key-headline_warn { background: {warn_bg}; }
-.st-key-headline_warn * { color: {warn_text}; }
+
+/* 한글은 단어 중간에서 줄을 바꾸지 않게 */
+.hs-hero, .hs-result, .hs-section-title, .hs-legend { word-break: keep-all; }
+/* 첫 화면 */
+.hs-hero { padding: 0 2px 8px; }
+.hs-pill { display: inline-block; background: {loan}; color: #0e0f0c; font-weight: 700; font-size: 13px;
+           padding: 5px 12px; border-radius: 999px; }
+.hs-hero-title { font-size: clamp(36px, 6vw, 64px); font-weight: 900; line-height: 1.05; letter-spacing: -0.045em;
+                 margin: 16px 0 14px; color: {text}; }
+.hs-hero-sub { font-size: 17px; line-height: 1.65; color: {muted}; max-width: 640px; margin: 0; }
+.hs-hero-note { font-size: 13px; color: {muted}; margin: 10px 0 0; }
+
+/* 카드 제목: STEP 표시 + 굵은 제목 */
+.hs-section { margin: 0 0 2px; }
+.hs-step { font-size: 12px; font-weight: 800; letter-spacing: 0.1em; color: {step}; }
+.hs-section-title { font-size: 26px; font-weight: 800; letter-spacing: -0.03em; color: {text}; margin-top: 2px; }
+
+/* 결과 요약 메인 카드 */
+.hs-result { border-radius: 24px; padding: 30px 30px 28px; }
+.hs-result.now { background: {now_bg}; color: {now_text}; }
+.hs-result.now .hs-big { color: {now_big}; }
+.hs-result.later { background: {later_bg}; color: {later_text}; }
+.hs-result.later .hs-big { color: {later_big}; }
+.hs-result.warn { background: {warn_bg}; color: {warn_text}; }
+.hs-result.warn .hs-big { color: {warn_big}; }
+.hs-eyebrow { font-size: 15px; font-weight: 700; }
+.hs-big { font-size: clamp(40px, 7.5vw, 76px); font-weight: 900; letter-spacing: -0.045em; line-height: 1.02;
+          margin: 10px 0 14px; word-break: keep-all; }
+.hs-sub { font-size: 16px; line-height: 1.65; margin: 0; }
+.hs-sub + .hs-sub { margin-top: 4px; }
+
+/* 필요한 돈 구성 막대 */
+.hs-bar-head { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: 4px 12px;
+               margin: 26px 0 10px; color: {text}; }
+.hs-bar-head b { font-size: 16px; }
+.hs-bar-head span { font-size: 14px; color: {muted}; }
+.hs-bar { display: flex; gap: 2px; height: 20px; border-radius: 999px; overflow: hidden; background: {tile}; }
+.hs-seg { height: 100%; min-width: 4px; }
+.hs-seg.own { background: {own}; }
+.hs-seg.loan { background: {loan}; }
+.hs-seg.gap { background: repeating-linear-gradient(135deg, {gap} 0 6px, {gap2} 6px 12px); }
+.hs-legend { display: flex; flex-wrap: wrap; gap: 6px 22px; margin-top: 12px; font-size: 14px; color: {muted}; }
+.hs-legend b { color: {text}; font-weight: 700; margin-left: 4px; }
+.hs-dot { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.hs-dot.own { background: {own}; } .hs-dot.loan { background: {loan}; }
+.hs-dot.gap { background: repeating-linear-gradient(135deg, {gap} 0 3px, {gap2} 3px 6px); }
+
+/* 주요 숫자 목록 (상자 대신 가는 선으로 구분) */
+.hs-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0 28px; margin: 18px 0 6px; }
+.hs-stat { border-top: 1px solid {line}; padding: 14px 0 12px; }
+.hs-stat-label { font-size: 13px; color: {muted}; }
+.hs-stat-value { font-size: 23px; font-weight: 800; letter-spacing: -0.02em; color: {text}; margin-top: 4px; word-break: keep-all; }
+.hs-stat-hint { font-size: 12px; color: {muted}; margin-top: 3px; word-break: keep-all; }
+
 @media (max-width: 640px) {
-  [class*="st-key-card_"], [class*="st-key-headline_"] { padding: 16px; border-radius: 20px; }
+  [data-testid="stMainBlockContainer"] { padding-top: 1.5rem; }
+  [class*="st-key-card_"] { padding: 18px; border-radius: 20px; }
+  .hs-result { padding: 22px 20px; }
+  .hs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
+  .hs-section-title { font-size: 22px; }
+  [data-testid="stTabs"] [data-baseweb="tab-list"] { gap: 2px; padding: 4px; }
+  [data-testid="stTab"] { padding: 7px 11px !important; }
+  [data-testid="stTab"] p { font-size: 14px; }
 }
 </style>
 """
@@ -122,11 +189,23 @@ def card(name):
     return st.container(key=f"card_{name}")
 
 
-def headline_card(kind, title, body):
-    """결과 요약 맨 위 결론 카드. kind: now(지금 가능) / later(N년 후) / warn(어려움)."""
-    with st.container(key=f"headline_{kind}"):
-        st.markdown(f"### {title}")
-        st.markdown(body)
+def section_title(title, step=None):
+    """카드 제목: 작은 'STEP n' 표시와 굵은 제목."""
+    eyebrow = f'<div class="hs-step">STEP {step}</div>' if step else ""
+    st.html(f'<div class="hs-section">{eyebrow}<div class="hs-section-title">{escape(title)}</div></div>')
+
+
+def render_hero():
+    """맨 위 첫 화면: 앱 이름 알약, 큰 질문, 한 줄 설명."""
+    st.html("""
+    <div class="hs-hero">
+      <span class="hs-pill">내집마련 시뮬레이터</span>
+      <div class="hs-hero-title">이 집, 언제 살 수 있을까?</div>
+      <p class="hs-hero-sub">내 자산 기록과 국토교통부 실거래가로 대출 한도·세금·부대비용까지 계산해
+      내 집 마련 시점을 알려드려요.</p>
+      <p class="hs-hero-note">자산 기록은 내 브라우저에만 저장되고 서버에는 남지 않아요.</p>
+    </div>
+    """)
 
 
 # ──────────────────────────────────────────────
@@ -525,7 +604,7 @@ def render_assets_tab():
     summary_box = st.container()  # 입력값이 모두 반영된 뒤 맨 마지막에 채운다
 
     with card("csv_upload"):
-        st.subheader(":material/upload_file: CSV로 기록 불러오기")
+        section_title("CSV로 기록 불러오기")
         left, right = st.columns([3, 1], vertical_alignment="center")
         uploaded = left.file_uploader("내려받아 둔 my_assets.csv를 올리면 지금 기록에 합쳐져요 (같은 월은 CSV 값으로 바뀜).",
                                       type="csv", key="asset_csv")
@@ -550,7 +629,7 @@ def render_assets_tab():
             (st.error if message.startswith("❌") else st.success)(message)
 
     with card("asset_input"):
-        st.subheader(":material/edit: 이번 달 자산 입력")
+        section_title("이번 달 자산 입력")
         month_options = [f"{m[:4]}-{m[4:]}" for m in recent_months(24)]
         if st.session_state["in_month"] not in month_options:
             month_options.insert(0, st.session_state["in_month"])
@@ -602,7 +681,7 @@ def render_assets_tab():
         render_asset_summary(values, records)
 
     with card("asset_status"):
-        st.subheader(":material/monitoring: 자산 현황")
+        section_title("자산 현황")
         render_asset_charts(values, records)
         if not records.empty:
             with st.expander(f":material/table_rows: 월별 기록 표로 보기 ({len(records)}개월)"):
@@ -618,7 +697,7 @@ def render_assets_tab():
                 st.caption("단위: 만원")
 
     with card("csv_backup"):
-        st.subheader(":material/download: CSV로 백업하기")
+        section_title("CSV로 백업하기")
         if is_admin_db():
             st.caption("관리자 기록은 Supabase에 저장돼 있어요. 따로 보관하고 싶을 때 내려받으세요.")
         else:
@@ -727,7 +806,7 @@ def render_dream_summary():
 
 def render_trade_search():
     """① 내 드림하우스: 지역 → 아파트 → 평형을 고르고, 그 집의 실거래가를 목표 매매가로."""
-    st.subheader("① :material/home: 내 드림하우스")
+    section_title("내 드림하우스", 1)
     render_dream_summary()
     codes = load_lawd_codes()
     sido_options = list(dict.fromkeys(codes["sido"]))
@@ -836,7 +915,7 @@ def render_apartment(apt_trades, apt_name):
 
 def render_asset_section():
     """② 보유 자산. (가용 자산 합계, 월 저축액)을 돌려준다."""
-    st.subheader("② :material/account_balance_wallet: 보유 자산")
+    section_title("보유 자산", 2)
     load_label = "☁️ 내 자산 불러오기 (관리자)" if is_admin_db() else "탭 1에서 불러오기"
     st.radio("자산 정보", ["탭 1에서 불러오기", "직접 입력"], key="asset_mode", horizontal=True,
              label_visibility="collapsed", format_func=lambda m: load_label if m == "탭 1에서 불러오기" else m)
@@ -890,7 +969,7 @@ def render_asset_section():
 
 def render_loan_section():
     """③ 대출 조건. 계산에 필요한 입력값 dict를 돌려준다."""
-    st.subheader("③ :material/account_balance: 대출 조건")
+    section_title("대출 조건", 3)
     config = st.session_state["config"]
 
     c1, c2, c3 = st.columns(3)
@@ -949,7 +1028,7 @@ def render_loan_section():
 
 def render_cost_section(price, area, is_first_time):
     """④ 부대비용. 부대비용 합계를 돌려준다."""
-    st.subheader("④ :material/receipt_long: 부대비용")
+    section_title("부대비용", 4)
     config = st.session_state["config"]
 
     house_count = "**일시적 2주택**: 기존 주택을 기한 안에 처분한다는 전제로 1주택 세율 적용" \
@@ -1003,26 +1082,46 @@ def render_cost_section(price, area, is_first_time):
     return total
 
 
-def render_result_headline(summary):
-    """⑤ 맨 위 한 줄 결론. 예상 소요 기간 문자열을 돌려준다."""
+def result_message(summary, saving):
+    """결과 메인 카드 내용: (색 종류, 위 작은 글, 큰 글, 설명 줄 목록, 예상 기간 문자열)."""
     if summary["status"] == "now":
-        headline_card("now", ":material/check_circle: 지금 바로 가능해요",
-                      f"필요한 돈을 모두 마련할 수 있어요. 여유 금액 **{format_manwon(-summary['shortfall'])}**")
-        return "지금 가능"
+        return ("now", "결과", "지금 바로 가능해요",
+                [f"필요한 돈을 모두 마련할 수 있어요. 여유 금액 <b>{format_manwon(-summary['shortfall'])}</b>"], "지금 가능")
     if summary["status"] == "later":
         months = summary["months"]
         total_month = date.today().year * 12 + date.today().month - 1 + months
         period = f"{months // 12}년 {months % 12}개월" if months >= 12 else f"{months}개월"
-        if months > LONG_WAIT_MONTHS:
-            headline_card("warn", f":material/warning: 지금 저축 속도로는 {LONG_WAIT_MONTHS // 12}년 넘게 걸려요",
-                          f"계산상 약 {period}이 걸려요. 월 저축액을 늘리거나 목표 가격·대출 조건을 조정해 보세요.")
-            return period
-        headline_card("later", f":material/schedule: 약 {period} 후, {total_month // 12}년 {total_month % 12 + 1}월에 가능해요",
-                      f"부족 금액 **{format_manwon(summary['shortfall'])}**을 월 저축액으로 모으는 데 걸리는 기간이에요.")
-        return period
-    headline_card("warn", ":material/warning: 현재 저축 속도로는 어려워요",
-                  "월 저축액을 늘리거나 목표 가격·대출 조건을 조정해 보세요.")
-    return "도달 불가"
+        lines = [f"<b>{total_month // 12}년 {total_month % 12 + 1}월</b>에 가능해요. "
+                 f"부족 금액 {format_manwon(summary['shortfall'])}을 월 {format_manwon(saving)}씩 모으는 기간이에요."]
+        if months > LONG_WAIT_MONTHS:  # 기간은 그대로 크게 보여주고, 카드 색과 한 줄 안내로만 경고
+            lines.append(f"{LONG_WAIT_MONTHS // 12}년이 넘는 계획이에요. 월 저축액을 늘리거나 목표 가격·대출 조건을 조정해 보세요.")
+            return "warn", "내 집 마련까지", f"약 {period} 후", lines, period
+        return "later", "내 집 마련까지", f"약 {period} 후", lines, period
+    return ("warn", "내 집 마련까지", "지금 속도로는 어려워요",
+            ["월 저축액이 0원 이하예요. 월 저축액을 늘리거나 목표 가격·대출 조건을 조정해 보세요."], "도달 불가")
+
+
+def funding_bar_html(total, available, loan_used, shortfall):
+    """필요한 돈 = 내 돈 + 대출 + 부족분을 한 줄 막대로 (비율은 총 필요 금액 기준)."""
+    own = max(0, min(available, total))
+    gap = max(0, shortfall)
+    parts = [("own", "내 돈(가용 자산)", own), ("loan", "대출", loan_used), ("gap", "부족", gap)]
+    parts = [(kind, label, amount) for kind, label, amount in parts if amount > 0]
+    base = sum(amount for _, _, amount in parts) or 1
+    segments = "".join(f'<div class="hs-seg {kind}" style="width:{amount / base * 100:.2f}%" '
+                       f'title="{label} {format_manwon(amount)}"></div>' for kind, label, amount in parts)
+    legend = "".join(f'<span><i class="hs-dot {kind}"></i>{label}<b>{format_manwon(amount)}</b></span>'
+                     for kind, label, amount in parts)
+    return (f'<div class="hs-bar-head"><b>필요한 돈 구성</b><span>총 {format_manwon(total)}</span></div>'
+            f'<div class="hs-bar">{segments}</div><div class="hs-legend">{legend}</div>')
+
+
+def stats_html(items):
+    """주요 숫자 목록: [(이름, 값, 보조 설명)]."""
+    cells = "".join(f'<div class="hs-stat" title="{escape(hint)}"><div class="hs-stat-label">{escape(label)}</div>'
+                    f'<div class="hs-stat-value">{escape(value)}</div><div class="hs-stat-hint">{escape(hint)}</div></div>'
+                    for label, value, hint in items)
+    return f'<div class="hs-stats">{cells}</div>'
 
 
 def render_limit_chart(ltv_limit, dsr_limit, loan_cap, basis):
@@ -1047,7 +1146,7 @@ def render_limit_chart(ltv_limit, dsr_limit, loan_cap, basis):
 
 def render_result_section(price, extra_costs, available, saving, loan):
     """⑤ 결과 요약."""
-    st.subheader("⑤ :material/summarize: 결과 요약")
+    section_title("결과 요약", 5)
     config = st.session_state["config"]
 
     ltv_limit = calc_ltv_limit(price, loan["ltv"])
@@ -1061,29 +1160,23 @@ def render_result_section(price, extra_costs, available, saving, loan):
     payment = calc_monthly_payment(loan_to_use, loan["rate"], loan["term"], loan["repayment"])
     ratio = calc_payment_ratio(payment["first_year"], loan["existing_payment"], loan["annual_income"])
 
-    period = render_result_headline(summary)
+    kind, eyebrow, big, lines, period = result_message(summary, saving)
+    sub = "".join(f'<p class="hs-sub">{line}</p>' for line in lines)
+    st.html(f'<div class="hs-result {kind}"><div class="hs-eyebrow">{eyebrow}</div>'
+            f'<div class="hs-big">{big}</div>{sub}</div>')
 
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("총 필요 금액", format_manwon(summary["total_needed"]), border=True,
-              help=f"매매가 {format_manwon(price)} + 부대비용 {format_manwon(extra_costs)}")
-    c2.metric("가용 자산", format_manwon(available), border=True)
-    c3.metric("최종 대출 한도", format_manwon(final_limit), border=True,
-              help="LTV·DSR·정책 상한 중 가장 작은 값")
-    c4.metric("부족 금액", format_manwon(max(0, summary["shortfall"])), border=True,
-              help="총 필요 금액 − 가용 자산 − 최종 대출 한도")
+    payment_label = "월 상환액" if loan["repayment"] == "원리금균등" else "월 상환액 (첫 달)"
+    st.html(funding_bar_html(summary["total_needed"], available, loan_to_use, summary["shortfall"]) + stats_html([
+        ("총 필요 금액", format_manwon(summary["total_needed"]),
+         f"매매가 {format_manwon(price)} + 부대비용 {format_manwon(extra_costs)}"),
+        ("가용 자산", format_manwon(available), "부동산을 뺀 자산 − 부채 (갈아타기 순매도액 포함)"),
+        ("최종 대출 한도", format_manwon(final_limit), f"{basis} 기준 · LTV·DSR·정책 상한 중 가장 작은 값"),
+        ("부족 금액", format_manwon(max(0, summary["shortfall"])), "총 필요 금액 − 가용 자산 − 대출 한도"),
+        (payment_label, format_manwon(payment["first"]),
+         f"대출 {format_manwon(loan_to_use)} · 실제 금리 {loan['rate']:.2f}% · {loan['term']}년"),
+        ("소득 대비 상환 비율", f"{ratio:.1f}%" if ratio is not None else "-", "(첫해 원리금 + 기존 원리금) ÷ 연소득"),
+    ]))
 
-    c1, c2, c3 = st.columns(3)
-    c1.metric("예상 소요 기간", period, border=True, help="부족 금액 ÷ 월 저축액 (올림)")
-    if loan["repayment"] == "원리금균등":
-        c2.metric("월 상환액", format_manwon(payment["first"]), border=True,
-                  help=f"대출 {format_manwon(loan_to_use)} · 실제 금리 {loan['rate']:.2f}% 기준")
-    else:
-        c2.metric("월 상환액 (첫 달)", format_manwon(payment["first"]), border=True,
-                  help=f"마지막 달 {format_manwon(payment['last'])} · 대출 {format_manwon(loan_to_use)} 기준")
-    c3.metric("소득 대비 상환 비율", f"{ratio:.1f}%" if ratio is not None else "-", border=True,
-              help="(첫해 원리금 + 기존 대출 원리금) ÷ 연소득")
-
-    st.markdown(f"최종 대출 한도는 :blue-badge[{basis}] 기준이 가장 작아서 정해졌어요.")
     render_limit_chart(ltv_limit, dsr_limit, loan_cap, basis)
 
     with st.expander(":material/calculate: 계산 근거 보기"):
@@ -1119,7 +1212,7 @@ def render_simulator_tab():
     with card("result"):
         render_result_section(price, extra_costs, available, saving, loan)
     with card("monthly"):
-        st.subheader("⑥ :material/show_chart: 월별 시뮬레이션 (선택)")
+        section_title("월별 시뮬레이션 (선택)", 6)
         st.caption("집값 상승률·자산 수익률을 반영한 그래프는 보너스 단계에서 추가될 예정이에요.")
 
     show_disclaimer()
@@ -1814,9 +1907,7 @@ refresh_default_inputs() # 위젯이 처음 그려지는 실행에서 기본값�
 render_sidebar()
 st.markdown(page_css(), unsafe_allow_html=True)
 
-st.title("내집마련 시뮬레이터")
-st.caption("내 자산과 실거래가로 '이 집을 언제 살 수 있을지' 계산해 봐요. "
-           "자산 기록은 내 브라우저에만 저장되고 서버에는 남지 않아요.")
+render_hero()
 
 tab_assets, tab_simulator, tab_admin = st.tabs([":material/account_balance_wallet: 내 자산", ":material/home: 내집마련 시뮬레이터", ":material/settings: 관리자"])
 with tab_assets:

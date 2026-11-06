@@ -5,7 +5,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## 프로젝트 상태
 
 내집마련 시뮬레이터: Streamlit 개인용 웹앱. 바이브코딩 교육 실습(2시간 30분)용이며, 사용자는 코딩 경험이 적은 수강생이다.
-`prompts.md` 기준 3단계(UI 디자인)까지 구현됨 + 자산 기록 저장 기능 추가(방문자 브라우저 / 관리자 Supabase, `storage.py`). 4단계(Playwright 검토)를 2026-11-06에 수행하고 추천 버그(조회 기간·기록 지우기·긴 소요 기간·관리자 값 검증 등)를 고쳤으며, 관리자 정책값 편집을 폼·표 방식으로 바꿨다. 남은 것은 배포와 낮음 등급 버그다. **작업 전에 반드시 읽을 것:**
+`prompts.md` 기준 3단계(UI 디자인)까지 구현됨 + 자산 기록 저장 기능 추가(방문자 브라우저 / 관리자 Supabase, `storage.py`). 4단계(Playwright 검토)를 2026-11-06에 수행하고 추천 버그(조회 기간·기록 지우기·긴 소요 기간·관리자 값 검증 등)를 고쳤으며, 관리자 정책값 편집을 폼·표 방식으로 바꿨다. 2026-11-06 배포 완료: https://home-simulator.streamlit.app/ (GitHub kemily1004/home-simulator, main 브랜치 push 시 자동 재배포, 비밀값은 Streamlit Cloud Secrets). 남은 것은 낮음 등급 버그와 보너스 기능이다. **작업 전에 반드시 읽을 것:**
 - `prd.md`: 요구사항, 계산 공식(6장), API 명세(7장), `config.json` 구조(8장), 보안 규칙(10장)
 - `prompts.md`: 단계별 개발 프롬프트 (1 뼈대 → 2-A/2-B/2-C 규칙 기능 → 3 UI → 4 Playwright 검토 → 배포)
 
@@ -34,7 +34,7 @@ Windows 콘솔에서 한글이 깨지면 명령 앞에 `PYTHONIOENCODING=utf-8`�
 - 차트는 모두 `style_figure()`를 거치고, 색은 `chart_colors()`에서 가져온다(`st.context.theme.type`으로 라이트/다크 팔레트 선택). 항목 색은 항목에 고정한다: 자산은 `ASSET_COLUMNS` 순서, 전용면적은 전체 조회 결과 기준. 강조 값은 `focus`(Wise 초록), 비교 값은 `context`(회색). 금액 축은 억원 단위, hover에는 `format_manwon` 문자열을 쓴다.
 - `.streamlit/config.toml`은 `[theme.light]`와 `[theme.dark]`를 모두 정의한다. `[theme]`에 색만 넣으면 다크 모드가 꺼진다.
 - 디자인 기준은 `DESIGN-wise.md`(Wise): 라임 `#9fe870`은 주요 버튼 색, 글꼴은 Pretendard(config.toml에서 CDN으로 로드), 제목 아이콘은 컬러 이모지 대신 `:material/...:` 단색 아이콘.
-- 화면 CSS는 `page_css()` 하나로 넣는다(`PAGE_CSS` + 테마별 `PAGE_COLORS`, 실행마다 라이트/다크 색을 끼움). 용도: 라임 배경 위 검정 글자, metric 줄바꿈, 세이지 바탕 위 흰 카드(`card(이름)` = key `card_…`), 테두리 없는 metric 칸, 결과 결론 카드(`headline_card()` = key `headline_now/later/warn`). 새 카드는 `st.container(border=True)` 대신 `card()`를 쓴다(안쪽 작은 상자는 border=True 그대로).
+- 화면 CSS는 `page_css()` 하나로 넣는다(`PAGE_CSS` + 테마별 `PAGE_COLORS`, 실행마다 라이트/다크 색을 끼움). 용도: 라임 배경 위 검정 글자, metric 줄바꿈, 세이지 바탕 위 흰 카드(`card(이름)` = key `card_…`), 테두리 없는 metric 칸, 결과 메인 카드·자금 구성 막대·숫자 목록(`result_message()`/`funding_bar_html()`/`stats_html()`를 `st.html`로, 클래스 `hs-*`), 첫 화면 `render_hero()`, 카드 제목 `section_title(제목, STEP 번호)`, 알약 모양 탭. `st.html`에 넣는 글자는 `escape()`한다. 새 카드는 `st.container(border=True)` 대신 `card()`를 쓴다(안쪽 작은 상자는 border=True 그대로).
 - 위젯 기본값은 첫 실행(브라우저 응답 대기, 위젯 없음)에 넣으므로, `refresh_default_inputs()`가 위젯을 처음 그리는 실행에서 다시 넣어야 입력칸에 보인다.
 - 두 열 입력은 `st.columns(2)`를 한 줄씩 만든다. 열 하나에 몰아 넣으면 모바일에서 세로로 쌓일 때 순서가 뒤섞인다.
 - 브라우저 저장 순서: `sync_browser_load()`는 **위젯보다 먼저**(입력칸을 채워야 하므로), `sync_browser_save()`는 **스크립트 맨 끝**(이번 실행의 저장 버튼 결과까지 쓰려고) 호출한다. 불러오기가 끝나기 전(`browser_loaded=False`)에는 쓰지 않는다(빈 기록으로 덮어쓰기 방지). 컴포넌트 등록은 실행마다 해야 한다(모듈 수준에서 한 번만 등록하면 두 번째 실행부터 "not registered" 오류).
