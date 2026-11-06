@@ -89,7 +89,7 @@ h1 { letter-spacing: -0.03em; }
 h2, h3 { letter-spacing: -0.02em; }
 
 /* 탭: 흰 알약 안에 선택된 탭만 진하게 (Wise 내비게이션) */
-[data-testid="stTabs"] [data-baseweb="tab-list"] {
+[data-testid="stTabs"] [role="tablist"] {
   gap: 4px; background: {card}; padding: 6px; border-radius: 999px; width: fit-content; max-width: 100%;
 }
 [data-testid="stTabs"] [data-baseweb="tab-highlight"], [data-testid="stTabs"] [data-baseweb="tab-border"] { display: none; }
@@ -164,7 +164,7 @@ h2, h3 { letter-spacing: -0.02em; }
   .hs-result { padding: 22px 20px; }
   .hs-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 16px; }
   .hs-section-title { font-size: 22px; }
-  [data-testid="stTabs"] [data-baseweb="tab-list"] { gap: 2px; padding: 4px; }
+  [data-testid="stTabs"] [role="tablist"] { gap: 2px; padding: 4px; }
   [data-testid="stTab"] { padding: 7px 11px !important; }
   [data-testid="stTab"] p { font-size: 14px; }
 }
