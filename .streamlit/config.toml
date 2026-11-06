@@ -1,0 +1,71 @@
+# 화면 테마: DESIGN-wise.md (Wise 디자인) 기준
+# - 라임 그린(#9fe870)은 주요 버튼 한 곳에만 쓰는 브랜드 색
+# - 글자는 올리브빛이 도는 검정(#0e0f0c), 보조 면은 세이지 회색(#e8ebe6)
+# - [theme]에는 글꼴·모서리처럼 색이 아닌 값만 둔다. 색을 [theme]에 넣으면 다크 모드가 꺼진다.
+
+[theme]
+# Pretendard: Inter와 비슷한 모양의 한글 글꼴 (Wise 본문 글꼴 Inter 대체)
+font = "Pretendard:https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard-dynamic-subset.css, sans-serif"
+# 제목은 아주 굵게(900), 그 아래는 semibold (Wise: 큰 제목 900, 나머지 600)
+headingFontWeights = [900, 800, 700, 700, 600, 600]
+baseRadius = "12px"      # 입력칸·카드 모서리
+buttonRadius = "full"    # 버튼은 알약 모양
+metricValueFontSize = "1.6rem"
+metricValueFontWeight = 700
+
+[theme.light]
+primaryColor = "#9fe870"
+backgroundColor = "#e8ebe6"          # 세이지 바탕 (흰 카드는 app.py의 page_css)
+secondaryBackgroundColor = "#eef0eb" # 입력칸 채움
+textColor = "#0e0f0c"
+borderColor = "#d3d8cf"
+linkColor = "#163300"
+# 안내 상자·배지 색 (Wise 의미 색)
+greenColor = "#2ead4b"
+greenBackgroundColor = "#e2f6d5"
+greenTextColor = "#054d28"
+blueColor = "#163300"
+blueBackgroundColor = "#eef1ec"
+blueTextColor = "#163300"
+yellowColor = "#ffd11a"
+yellowBackgroundColor = "#fff6cc"
+yellowTextColor = "#4a3b1c"
+orangeColor = "#b86700"
+orangeBackgroundColor = "#ffe8d6"
+orangeTextColor = "#7a3d00"
+redColor = "#d03238"
+redBackgroundColor = "#fde8e8"
+redTextColor = "#a72027"
+grayTextColor = "#454745"
+
+[theme.dark]
+primaryColor = "#9fe870"
+backgroundColor = "#0e0f0c"
+secondaryBackgroundColor = "#262923"
+textColor = "#e8ebe6"
+borderColor = "#33372f"
+linkColor = "#9fe870"
+greenColor = "#2ead4b"
+greenBackgroundColor = "#1a2b12"
+greenTextColor = "#9fe870"
+blueColor = "#c5edab"
+blueBackgroundColor = "#1d201b"
+blueTextColor = "#c5edab"
+yellowColor = "#ffd11a"
+yellowBackgroundColor = "#2e2608"
+yellowTextColor = "#ffd11a"
+orangeColor = "#ffc091"
+orangeBackgroundColor = "#33220f"
+orangeTextColor = "#ffc091"
+redColor = "#d03238"
+redBackgroundColor = "#320707"
+redTextColor = "#ff8a8f"
+grayTextColor = "#a3a6a0"
+
+[theme.light.sidebar]
+backgroundColor = "#ffffff"
+secondaryBackgroundColor = "#eef0eb"
+
+[theme.dark.sidebar]
+backgroundColor = "#171915"
+secondaryBackgroundColor = "#262923"

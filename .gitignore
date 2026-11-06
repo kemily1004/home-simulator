@@ -1,0 +1,10 @@
+.streamlit/secrets.toml
+.env
+__pycache__/
+.venv/
+.playwright-mcp/
+screenshots/
+# 개인 문서·대화 기록·백업은 공개 저장소에 올리지 않는다
+*.docx
+*pastedcontent*.txt
+*.zip
