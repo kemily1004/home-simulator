@@ -66,13 +66,15 @@ PAGE_COLORS = {
               "own": "#163300", "loan": "#9fe870", "gap": "#ffd11a", "gap2": "#ffeb99",
               "now_bg": "#0e0f0c", "now_big": "#9fe870", "now_text": "#e8ebe6",
               "later_bg": "#e2f6d5", "later_big": "#163300", "later_text": "#163300",
-              "warn_bg": "#fff3c4", "warn_big": "#4a3b1c", "warn_text": "#4a3b1c"},
+              "warn_bg": "#fff3c4", "warn_big": "#4a3b1c", "warn_text": "#4a3b1c",
+              "down_bg": "#fde8e8", "down_text": "#a72027"},
     "dark": {"card": "#171915", "tile": "#20231e", "line": "#2c3029", "text": "#e8ebe6", "muted": "#a3a6a0",
              "step": "#9fe870", "tab_on_bg": "#9fe870", "tab_on_text": "#0e0f0c",
              "own": "#38c8ff", "loan": "#9fe870", "gap": "#ffd11a", "gap2": "#8a7310",
              "now_bg": "#9fe870", "now_big": "#0e0f0c", "now_text": "#163300",
              "later_bg": "#1a2b12", "later_big": "#cdffad", "later_text": "#c5edab",
-             "warn_bg": "#2e2608", "warn_big": "#ffd11a", "warn_text": "#f3e3a6"},
+             "warn_bg": "#2e2608", "warn_big": "#ffd11a", "warn_text": "#f3e3a6",
+             "down_bg": "#320707", "down_text": "#ff8a8f"},
 }
 PAGE_CSS = """
 <style>
@@ -106,7 +108,59 @@ h2, h3 { letter-spacing: -0.02em; }
 [class*="st-key-card_"] [data-testid="stExpander"] details { border-color: {line}; border-radius: 16px; }
 
 /* 한글은 단어 중간에서 줄을 바꾸지 않게 */
-.hs-hero, .hs-result, .hs-section-title, .hs-legend { word-break: keep-all; }
+.hs-hero, .hs-result, .hs-section-title, .hs-legend, .hs-tiles, .hs-receipt-total, .hs-row, .hs-dream, .hs-total { word-break: keep-all; }
+/* 입력칸 아래 "= 12억 3,000만원" (입력 즉시 바뀜) */
+.hs-live { font-size: 14px; color: {muted}; margin-top: -8px; }
+/* 자산 입력 합계 줄 */
+.hs-total { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.hs-total > div { background: {tile}; border-radius: 16px; padding: 14px 18px; }
+.hs-total span { display: block; font-size: 13px; color: {muted}; }
+.hs-total b { display: block; font-size: 24px; font-weight: 800; letter-spacing: -0.02em; color: {text}; margin-top: 2px; }
+/* 숫자 타일 (st.metric 대신) */
+.hs-tiles { display: grid; gap: 12px; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); margin: 4px 0; }
+.hs-tile { background: {tile}; border-radius: 18px; padding: 16px 20px; min-width: 0; }
+.hs-tiles.on-bg .hs-tile { background: {card}; }
+.hs-tile-label { font-size: 13px; color: {muted}; }
+.hs-tile-value { font-size: 25px; font-weight: 800; letter-spacing: -0.02em; color: {text}; margin-top: 4px; line-height: 1.25; }
+.hs-tile-hint { font-size: 12px; color: {muted}; margin-top: 4px; }
+.hs-tile.dark { background: {now_bg} !important; }
+.hs-tile.dark .hs-tile-label, .hs-tile.dark .hs-tile-hint { color: {now_text}; opacity: .8; }
+.hs-tile.dark .hs-tile-value { color: {now_big}; font-size: clamp(28px, 3.2vw, 36px); font-weight: 900; }
+.hs-delta { display: inline-block; font-size: 12px; font-weight: 700; padding: 3px 10px; border-radius: 999px; margin-top: 8px;
+            background: {later_bg}; color: {later_big}; }
+.hs-delta.down { background: {down_bg}; color: {down_text}; }
+
+/* 부대비용 영수증 */
+.hs-receipt-total { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; flex-wrap: wrap;
+                    padding: 6px 0 14px; border-bottom: 2px solid {text}; }
+.hs-receipt-total span { font-size: 15px; font-weight: 700; color: {text}; }
+.hs-receipt-total b { font-size: clamp(26px, 4vw, 34px); font-weight: 900; letter-spacing: -0.03em; color: {text}; }
+.hs-row { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 11px 0; border-bottom: 1px solid {line}; }
+.hs-row .n { font-weight: 700; color: {text}; font-size: 15px; }
+.hs-row .note { font-size: 12px; color: {muted}; margin-top: 1px; }
+.hs-row .a { font-weight: 800; color: {text}; white-space: nowrap; font-size: 16px; }
+.hs-row.zero { opacity: .45; }
+.hs-row.minus .a { color: {step}; }
+
+/* 작은 알약: 데이터 출처, 정책값 */
+.hs-status { display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; padding: 7px 14px;
+             border-radius: 999px; background: {later_bg}; color: {later_big}; }
+.hs-status i { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+.hs-status.sample { background: {warn_bg}; color: {warn_text}; }
+.hs-chips { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.hs-chips .l { font-size: 14px; color: {muted}; margin-right: 2px; }
+.hs-chip { background: {later_bg}; color: {later_big}; font-weight: 700; font-size: 13px; padding: 4px 12px; border-radius: 999px; }
+
+/* 드림하우스 카드, 작은 소제목 */
+.hs-dream { background: {tile}; border-radius: 18px; padding: 16px 20px; display: flex; justify-content: space-between;
+            align-items: center; gap: 8px 16px; flex-wrap: wrap; }
+.hs-dream small { display: block; font-size: 12px; font-weight: 700; color: {step}; letter-spacing: .04em; }
+.hs-dream b { font-size: 18px; color: {text}; }
+.hs-dream .p { font-size: 22px; font-weight: 900; color: {text}; letter-spacing: -0.02em; }
+.hs-dream .d { font-size: 12px; color: {muted}; text-align: right; }
+.hs-subhead { font-size: 18px; font-weight: 800; letter-spacing: -0.02em; color: {text}; margin-top: 10px; }
+.hs-subhead + p { font-size: 14px; color: {muted}; margin: 2px 0 0; }
+
 /* 첫 화면 */
 .hs-hero { padding: 0 2px 8px; }
 .hs-pill { display: inline-block; background: {loan}; color: #0e0f0c; font-weight: 700; font-size: 13px;
@@ -193,6 +247,20 @@ def section_title(title, step=None):
     """카드 제목: 작은 'STEP n' 표시와 굵은 제목."""
     eyebrow = f'<div class="hs-step">STEP {step}</div>' if step else ""
     st.html(f'<div class="hs-section">{eyebrow}<div class="hs-section-title">{escape(title)}</div></div>')
+
+
+def tile_html(label, value, hint="", dark=False, live=None, delta=None, down=False):
+    """숫자 타일 하나. live를 주면 입력하는 즉시 LIVE_MONEY_JS가 값을 바꾼다."""
+    value_html = f'<span data-live-sum="{live}">{escape(value)}</span>' if live else escape(value)
+    hint_html = f'<div class="hs-tile-hint">{escape(hint)}</div>' if hint else ""
+    delta_html = f'<span class="hs-delta{" down" if down else ""}">{escape(delta)}</span>' if delta else ""
+    return (f'<div class="hs-tile{" dark" if dark else ""}"><div class="hs-tile-label">{escape(label)}</div>'
+            f'<div class="hs-tile-value">{value_html}</div>{hint_html}{delta_html}</div>')
+
+
+def tiles(*tile_htmls, on_bg=False, box=st):
+    """숫자 타일 묶음을 그린다 (화면 폭에 맞춰 자동 줄바꿈). on_bg=True면 카드 밖(세이지 바탕)용 흰 타일."""
+    box.html(f'<div class="hs-tiles{" on-bg" if on_bg else ""}">{"".join(tile_htmls)}</div>')
 
 
 def render_hero():
@@ -315,9 +383,69 @@ def slider_with_input(label, key, min_value, max_value, step, help=None):
 
 def money_input(label, key, step=100, help=None, container=st):
     """만원 단위 숫자 입력 + 읽기 쉬운 금액 캡션."""
-    value = container.number_input(f"{label} (만원)", min_value=0, step=step, key=key, help=help)
-    container.caption(f"= {format_manwon(value)}")
+    full_label = f"{label} (만원)"
+    value = container.number_input(full_label, min_value=0, step=step, key=key, help=help)
+    # 글자를 칠 때마다 LIVE_MONEY_JS가 이 글자를 바로 바꾼다 (파이썬은 엔터·칸 이동 뒤에 같은 값으로 다시 그림)
+    container.html(f'<div class="hs-live" data-live-for="{escape(full_label)}">= {escape(format_manwon(value))}</div>')
     return value
+
+
+# 입력하는 즉시(엔터 전) 금액 글자와 합계를 바꾸는 짧은 JS. 계산 결과는 엔터 뒤 파이썬이 다시 맞춘다.
+# - [data-live-for="입력칸 이름"] 글자를 "= 12억 3,000만원"으로
+# - [data-live-sum="net|available"] 글자를 자산 입력칸 값으로 계산한 합계로
+LIVE_MONEY_JS = """
+export default function(component) {
+    const { data } = component;
+    window.__hsLiveData = data;                 // 컴포넌트가 다시 그려질 때 최신 설정으로 교체
+    if (window.__hsLiveInstalled) { return; }
+    window.__hsLiveInstalled = true;
+
+    const fmt = (n) => {
+        n = Math.round(n || 0);
+        const sign = n < 0 ? '-' : '';
+        n = Math.abs(n);
+        const eok = Math.floor(n / 10000), man = n % 10000;
+        if (eok && man) { return sign + eok.toLocaleString('ko-KR') + '억 ' + man.toLocaleString('ko-KR') + '만원'; }
+        if (eok) { return sign + eok.toLocaleString('ko-KR') + '억원'; }
+        return sign + man.toLocaleString('ko-KR') + '만원';
+    };
+    const inputOf = (label) => {
+        for (const el of document.querySelectorAll('[data-testid="stNumberInput"] input')) {
+            if (el.getAttribute('aria-label') === label) { return el; }
+        }
+        return null;
+    };
+    const valueOf = (label) => {
+        const el = inputOf(label);
+        const v = el ? parseFloat(String(el.value).replace(/,/g, '')) : 0;
+        return isNaN(v) ? 0 : v;
+    };
+    const update = (label) => {
+        for (const el of document.querySelectorAll('[data-live-for]')) {
+            if (el.getAttribute('data-live-for') === label) { el.textContent = '= ' + fmt(valueOf(label)); }
+        }
+        const labels = (window.__hsLiveData || {}).assets;
+        if (!labels) { return; }
+        const v = {};
+        for (const k in labels) { v[k] = valueOf(labels[k]); }
+        const available = v.cash + v.invest + v.safe + v.deposit - v.debt;
+        const sums = { available: available, net: available + v.real_estate };
+        for (const el of document.querySelectorAll('[data-live-sum]')) {
+            el.textContent = fmt(sums[el.getAttribute('data-live-sum')]);
+        }
+    };
+    document.addEventListener('input', (event) => {
+        const el = event.target;
+        if (el && el.closest && el.closest('[data-testid="stNumberInput"]')) { update(el.getAttribute('aria-label')); }
+    }, true);
+}
+"""
+
+
+def live_money(assets=None):
+    """실시간 금액 표시용 컴포넌트를 화면에 붙인다 (실행마다, 같은 자리에)."""
+    component = st.components.v2.component("live_money", js=LIVE_MONEY_JS)
+    return component(data={"assets": assets})
 
 
 def signed_manwon(amount):
@@ -538,18 +666,17 @@ def render_asset_summary(values, records):
     saving = calc_avg_monthly_saving(records)
 
     previous = records[records["month"] < st.session_state["in_month"]] if not records.empty else records
-    delta = None
+    delta, down = None, False
     if len(previous):
-        prev = records_with_totals(previous).iloc[-1]
-        delta = f"{signed_manwon(net_worth - prev['net_worth'])} (vs {prev['month']})"
-
-    c1, c2, c3 = st.columns(3)
-    c1.metric("순자산(전체)", format_manwon(net_worth), delta=delta, border=True,
-              help="모든 자산(부동산 포함) − 부채")
-    c2.metric("가용 자산", format_manwon(available), border=True,
-              help="부동산을 뺀 자산 − 부채. 집 살 때 쓸 수 있는 돈이에요.")
-    c3.metric("평균 월 저축액", format_manwon(saving) if saving is not None else "기록 2개 이상 필요", border=True,
-              help="최근 12개월 기록에서 가용 자산이 한 달에 평균 얼마나 늘었는지 (투자 수익·손실 포함)")
+        diff = net_worth - records_with_totals(previous).iloc[-1]["net_worth"]
+        delta, down = f"{signed_manwon(diff)} · 지난 기록 대비", diff < 0
+    tiles(
+        tile_html("내 순자산 (부동산 포함)", format_manwon(net_worth), "모든 자산 − 부채", dark=True, live="net",
+                  delta=delta, down=down),
+        tile_html("가용 자산", format_manwon(available), "부동산을 뺀 자산 − 부채. 집 살 때 쓸 수 있는 돈", live="available"),
+        tile_html("평균 월 저축액", format_manwon(saving) if saving is not None else "기록 2개 이상 필요",
+                  "최근 12개월 기록 기준 (투자 수익·손실 포함)"),
+        on_bg=True)
 
 
 def render_asset_charts(values, records):
@@ -652,6 +779,12 @@ def render_assets_tab():
             st.info("준비 중이에요.")
 
         values = {col: st.session_state[f"in_{col}"] for col in ASSET_COLUMNS}
+        available = calc_available(values["cash"], values["invest"], values["safe"], values["deposit"], values["debt"])
+        st.html(  # 입력하는 즉시 LIVE_MONEY_JS가 두 숫자를 바꾼다
+            '<div class="hs-total">'
+            f'<div><span>순자산 (부동산 포함)</span><b data-live-sum="net">{format_manwon(calc_net_worth(**values))}</b></div>'
+            f'<div><span>가용 자산 (집 살 때 쓸 수 있는 돈)</span><b data-live-sum="available">{format_manwon(available)}</b></div>'
+            '</div>')
         month = st.session_state["in_month"]
         where = "Supabase" if is_admin_db() else "이 브라우저"
         has_month = month in set(active_records()["month"])
@@ -799,9 +932,10 @@ def render_dream_summary():
     """저장된 드림하우스가 있으면 맨 위에 한 줄로 보여준다."""
     dream = st.session_state.get("dream_house")
     if dream:
-        st.info(f"🏡 **저장된 드림하우스**: {dream['sigungu']} {dream['apt_name']} {area_label(dream['area'])} · "
-                f"{format_manwon(dream['price'])} ({dream['deal_date']} 실거래). 아래 계산에 쓰이고 있어요. "
-                "최신 시세를 보려면 다시 조회하세요.")
+        st.html(f'<div class="hs-dream"><div><small>저장된 드림하우스</small>'
+                f'<b>{escape(dream["sigungu"])} {escape(dream["apt_name"])}</b> · {escape(area_label(dream["area"]))}</div>'
+                f'<div><div class="p">{escape(format_manwon(dream["price"]))}</div>'
+                f'<div class="d">{escape(str(dream["deal_date"]))} 실거래 · 아래 계산에 쓰이는 중</div></div></div>')
 
 
 def render_trade_search():
@@ -839,10 +973,10 @@ def render_trade_search():
     if trades is None:
         st.caption("시/도·시/군/구를 고르고 **실거래가 조회**를 누른 뒤, 원하는 아파트를 골라 주세요.")
     else:
-        if st.session_state["trades_source"] == "api":
-            st.success(f"실시간 국토교통부 실거래가 · {st.session_state['trades_label']}", icon=":material/sensors:")
-        else:
-            st.warning(f"샘플 데이터 (실제 거래 아님) · {st.session_state['trades_label']}", icon=":material/science:")
+        live_data = st.session_state["trades_source"] == "api"
+        name = "실시간 국토교통부 실거래가" if live_data else "샘플 데이터 (실제 거래 아님)"
+        st.html(f'<span class="hs-status{"" if live_data else " sample"}"><i></i>{name} · '
+                f'{escape(st.session_state["trades_label"])}</span>')
         if st.session_state["trades_message"]:
             st.caption(st.session_state["trades_message"])
 
@@ -854,8 +988,7 @@ def render_trade_search():
         if apt_name:
             render_apartment(trades[trades["apt_name"] == apt_name], apt_name)
 
-    st.markdown("##### :material/flag: 목표 주택")
-    st.caption("위에서 적용하거나, 호가·예상가로 직접 고쳐도 돼요.")
+    st.html('<div class="hs-subhead">목표 주택</div><p>위에서 적용하거나, 호가·예상가로 직접 고쳐도 돼요.</p>')
     c1, c2 = st.columns(2)
     money_input("매매가", "price", step=1000, container=c1)
     threshold = st.session_state["config"]["acquisition_tax"]["rural_special_area_threshold"]
@@ -886,14 +1019,14 @@ def render_apartment(apt_trades, apt_name):
     per_pyeong = price_per_pyeong(recent["price"], recent["area"])
     supply_pyeong = estimate_pyeonghyeong(recent["area"])
 
-    m1, m2, m3 = st.columns(3)
-    m1.metric("최근 실거래가", format_manwon(recent["price"]), border=True,
-              help=f"{recent['deal_date']} 계약 · {recent['floor']}층 · 전용 {recent['area']}㎡")
-    m2.metric("평당 가격 (전용 기준)", format_manwon(per_pyeong) if per_pyeong else "-", border=True,
-              help=f"최근 실거래가 ÷ 전용 {to_pyeong(recent['area']):.1f}평. "
-                   f"공급면적(약 {supply_pyeong}평형) 기준이면 약 {format_manwon(recent['price'] / supply_pyeong)}")
-    m3.metric(f"조회 기간 최저~최고 ({len(same_area)}건)",
-              f"{format_manwon(same_area['price'].min())} ~ {format_manwon(same_area['price'].max())}", border=True)
+    tiles(
+        tile_html("최근 실거래가", format_manwon(recent["price"]),
+                  f"{recent['deal_date']} 계약 · {recent['floor']}층 · 전용 {recent['area']}㎡", dark=True),
+        tile_html("평당 가격 (전용 기준)", format_manwon(per_pyeong) if per_pyeong else "-",
+                  f"공급 약 {supply_pyeong}평형 기준이면 {format_manwon(recent['price'] / supply_pyeong)}"),
+        tile_html(f"조회 기간 최저 ~ 최고 ({len(same_area)}건)",
+                  f"{format_manwon(same_area['price'].min())} ~ {format_manwon(same_area['price'].max())}"),
+    )
 
     render_trade_chart(apt_trades, area_color_map(apt_trades, chart_colors()), apt_name)
     with st.expander(f":material/table_rows: {labels[st.session_state['area_choice']]} 거래 목록 ({len(same_area)}건)"):
@@ -930,13 +1063,11 @@ def render_asset_section():
             available = latest["available"]
             saving = calc_avg_monthly_saving(records)
             source = "Supabase 관리자 기록" if is_admin_db() else "기록"
-            c1, c2 = st.columns(2)
-            c1.metric(f"가용 자산 ({latest['month']} {source})", format_manwon(available), border=True)
-            if saving is not None:
-                c2.metric("평균 월 저축액", format_manwon(saving), border=True,
-                          help="투자 수익·손실도 포함된 값이에요.")
-            else:
-                c2.info("기록이 2개 이상 있어야 평균 월 저축액을 계산할 수 있어요. 아래에 직접 입력해 주세요.")
+            tiles(
+                tile_html("가용 자산", format_manwon(available), f"{latest['month']} {source} 기준"),
+                tile_html("평균 월 저축액", format_manwon(saving) if saving is not None else "직접 입력 필요",
+                          "투자 수익·손실 포함" if saving is not None else "기록이 2개 이상 있어야 계산돼요"),
+            )
 
     if available is None or saving is None:
         c1, c2 = st.columns(2)
@@ -960,8 +1091,7 @@ def render_asset_section():
             if not st.session_state["is_nontaxable"]:
                 tax = money_input("예상 양도세", "capital_gains_tax")
             net_sale = calc_net_sale(st.session_state["sale_price"], st.session_state["existing_mortgage"], tax)
-            st.metric("순매도액 (가용 자산에 더해짐)", format_manwon(net_sale),
-                      help="매도가 − 기존 주담대 − 예상 양도세")
+            tiles(tile_html("순매도액 (가용 자산에 더해짐)", format_manwon(net_sale), "매도가 − 기존 주담대 − 예상 양도세"))
             st.caption("⚠️ 양도세는 참고용이며 정확한 금액은 세무사 확인이 필요합니다.")
 
     return available + net_sale, saving
@@ -1004,11 +1134,11 @@ def render_loan_section():
     sync_default("ltv", int(round(get_default_ltv(grade, is_first_time, config))))
     sync_default("dsr", int(round(config["dsr"]["limit"])))
     sync_default("stress", round(calc_stress_rate(grade, st.session_state["rate_type"], config), 3))
-    st.markdown(
-        f"적용 중인 정책값: :blue-badge[LTV {st.session_state['ltv']}%] "
-        f":blue-badge[DSR {st.session_state['dsr']}%] "
-        f":blue-badge[스트레스 +{st.session_state['stress']:.2f}%p]"
-    )
+    st.html(f'<div class="hs-chips"><span class="l">적용 중인 정책값</span>'
+            f'<span class="hs-chip">{escape(grade)}</span>'
+            f'<span class="hs-chip">LTV {st.session_state["ltv"]}%</span>'
+            f'<span class="hs-chip">DSR {st.session_state["dsr"]}%</span>'
+            f'<span class="hs-chip">스트레스 +{st.session_state["stress"]:.2f}%p</span></div>')
     with st.expander(":material/tune: 고급 설정: LTV·DSR·스트레스 금리 직접 바꾸기"):
         st.caption("기본값은 지역·생애최초·금리 유형에 맞춰 정책값(config.json)에서 자동으로 들어가요.")
         ltv = slider_with_input("LTV (%)", "ltv", 0, 100, 1,
@@ -1072,13 +1202,12 @@ def render_cost_section(price, area, is_first_time):
         ("이사·인테리어 예비비", moving, "직접 입력"),
     ]
     total = sum(amount for _, amount, _ in rows)
-    table = pd.DataFrame(
-        [{"항목": name, "금액": format_manwon(amount), "계산 근거": note} for name, amount, note in rows]
-    )
-    st.metric("부대비용 합계", format_manwon(total), border=True,
-              help="세금 + 중개수수료 + 채권 할인 비용 + 직접 입력한 비용")
-    with st.expander(":material/list: 항목별 내역 보기"):
-        st.dataframe(table, hide_index=True, width="stretch")
+    row_html = "".join(
+        f'<div class="hs-row{" zero" if amount == 0 else ""}{" minus" if amount < 0 else ""}">'
+        f'<div><div class="n">{escape(name)}</div><div class="note">{escape(note)}</div></div>'
+        f'<div class="a">{escape(format_manwon(amount))}</div></div>'
+        for name, amount, note in rows)
+    st.html(f'<div class="hs-receipt-total"><span>부대비용 합계</span><b>{escape(format_manwon(total))}</b></div>{row_html}')
     return total
 
 
@@ -1906,6 +2035,7 @@ wait_for_browser_load()  # 불러오기 전에는 위젯을 만들지 않는다
 refresh_default_inputs() # 위젯이 처음 그려지는 실행에서 기본값이 입력칸에 보이도록
 render_sidebar()
 st.markdown(page_css(), unsafe_allow_html=True)
+live_money({col: f"{ASSET_LABELS[col]} (만원)" for col in ASSET_COLUMNS})  # 입력 즉시 금액 글자·합계 갱신
 
 render_hero()
 
